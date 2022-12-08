@@ -10,27 +10,31 @@ port = '5432'
 
 query_1 = '''
 CREATE VIEW QuantityGenre AS
-SELECT TRIM(genre_name) as genres, 
-COUNT(genre_id) FROM song_release 
-JOIN genres USING(genre_id) 
+SELECT TRIM(genre_name) AS genre, 
+COUNT(genre_id) 
+FROM cloud_releases 
+JOIN cloud_genres USING(genre_id) 
 GROUP BY genre_name
 '''
 
 query_2 = '''
 CREATE VIEW ArtistCount AS
-SELECT TRIM(artist_name) as artists, 
-COUNT(artist_id) FROM song_release 
-JOIN artists USING(artist_id) 
+SELECT TRIM(artist_name) as artist, 
+COUNT(song_id) 
+FROM cloud_artists 
+JOIN cloud_performances USING(artist_id) 
 GROUP BY artist_name
-ORDER BY COUNT DESC
 '''
 
 query_3 = '''
-CREATE VIEW QuantityTempoUpper100 AS
-SELECT song_name, tempo
-FROM songs
-WHERE tempo > 100
-ORDER BY tempo ASC
+CREATE VIEW QuantityNOTUSA AS
+SELECT TRIM(genre_name) AS genre, 
+COUNT(*) FROM cloud_performances 
+JOIN cloud_songs USING(song_id) 
+JOIN cloud_releases USING(song_id) 
+JOIN cloud_genres USING(genre_id) 
+WHERE perf_place != 'USA' 
+GROUP BY genre_name
 '''
 
 conn = psycopg2.connect(user = username, password = password, dbname = database, host = host, port = port)
@@ -71,10 +75,10 @@ with conn:
 
 
     print('3.\n')
-    cur.execute('Drop view if exists QuantityTempoUpper100')
+    cur.execute('Drop view if exists QuantityNOTUSA')
 
     cur.execute(query_3)
-    cur.execute('SELECT * FROM QuantityTempoUpper100')
+    cur.execute('SELECT * FROM QuantityNOTUSA')
     periods = []
     p_count = []
     plt.xticks(rotation=10)
